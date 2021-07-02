@@ -12,11 +12,20 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
+# Default hop_size in ms
+HOP_SIZE = 25
+
+# Number of frames to batch process for timestamp embeddings
+BATCH_SIZE = 512
+
 
 class RandomProjectionMelEmbedding(torch.nn.Module):
-    # sample rate and embedding size are required model attributes for the HEAR API
+
+    # sample rate and embedding sizes are required model attributes for the HEAR API
     sample_rate = 44100
     embedding_size = 4096
+    scene_embedding_size = embedding_size
+    timestamp_embedding_size = embedding_size
 
     # These attributes are specific to this baseline model
     n_fft = 4096
@@ -43,15 +52,6 @@ class RandomProjectionMelEmbedding(torch.nn.Module):
             torch.rand(self.n_mels, self.embedding_size) / normalization
         )
 
-    # The scene embedding size and timestamp embedding sizes are the same
-    @property
-    def scene_embedding_size(self):
-        return self.embedding_size
-
-    @property
-    def timestamp_embedding_size(self):
-        return self.embedding_size
-
     def forward(self, x: Tensor):
         # Compute the real-valued Fourier transform on windowed input signal.
         x = torch.fft.rfft(x * self.window)
@@ -71,7 +71,7 @@ class RandomProjectionMelEmbedding(torch.nn.Module):
         return embedding
 
 
-def load_model(model_file_path: str = "", device: str = "cpu") -> torch.nn.Module:
+def load_model(model_file_path: str = "") -> torch.nn.Module:
     """
     In this baseline, we don't load anything from disk.
 
@@ -79,15 +79,11 @@ def load_model(model_file_path: str = "", device: str = "cpu") -> torch.nn.Modul
         model_file_path: Load model checkpoint from this file path. For this baseline,
             if no path is provided then the default random init weights for the
             linear projection layer will be used.
-        device: For inference on machines with multiple GPUs,
-            this instructs the participant which device to use. If
-            “cpu”, the CPU should be used (Multi-GPU support is not
-            required).
     Returns:
         Model: torch.nn.Module loaded on the specified device.
     """
     if model_file_path == "":
-        model = RandomProjectionMelEmbedding().to(device)
+        model = RandomProjectionMelEmbedding()
     else:
         # TODO: implement loading weights from disk
         raise NotImplementedError("Loading model weights not implemented yet")
@@ -138,40 +134,21 @@ def frame_audio(
     return torch.stack(frames, dim=1), torch.tensor(timestamps)
 
 
-def get_audio_embedding(
+def get_timestamp_embedding(
     audio: Tensor,
     model: torch.nn.Module,
-    hop_size: float,
-    batch_size: Optional[int] = 512,
 ) -> Tuple[Tensor, Tensor]:
     """
     Args:
-        audio: n_sounds x n_samples of mono audio in the range
-            [-1, 1]. We are making the simplifying assumption that
-            for every task, all sounds will be padded/trimmed to
-            the same length. This doesn’t preclude people from
-            using the API for corpora of variable-length sounds;
-            merely we don’t implement that as a core feature. It
-            could be a wrapper function added later.
-        model: Loaded model, in PyTorch or Tensorflow 2.x. This
-            should be moved to the device the audio tensor is on.
-            hop_size: Extract embeddings every hop_size seconds (e.g.
-                    hop_size = 0.1 is an embedding frame rate of
-                    10 Hz). Embeddings and the corresponding
-                    timestamps should start at 0s and increment by
-                    hop_size seconds. For example, if the audio is
-                    1.1s and the hop_size is 0.25, then we should
-                    return embeddings centered at 0.0s, 0.25s, 0.5s,
-                    0.75s and 1.0s.
-        batch_size: The participants are responsible for estimating
-            the batch_size that will achieve high-throughput while
-            maintaining appropriate memory constraints. However,
-            batch_size is a useful feature for end-users to be able to
-            toggle.
+        audio: n_sounds x n_samples of mono audio in the range [-1, 1]. All sounds in
+            a batch will be padded/trimmed to the same length.
+        model: Loaded model, in PyTorch or Tensorflow 2.x.
 
     Returns:
-        - Tensor: Embeddings, `(n_sounds, n_frames, embedding_size)`.
-        - Tensor: Frame-center timestamps, 1d.
+        - Tensor: embedding, A float32 Tensor with shape (n_sounds, n_timestamp,
+            model.timestamp_embedding_size).
+        - Tensor: timestamps, Centered timestamps in milliseconds corresponding
+            to each embedding in the output.
     """
 
     # Assert audio is of correct shape
@@ -195,7 +172,7 @@ def get_audio_embedding(
     frames, timestamps = frame_audio(
         audio,
         frame_size=model.n_fft,
-        hop_size=hop_size,
+        hop_size=HOP_SIZE,
         sample_rate=RandomProjectionMelEmbedding.sample_rate,
     )
     audio_batches, num_frames, frame_size = frames.shape
@@ -204,7 +181,7 @@ def get_audio_embedding(
     # We're using a DataLoader to help with batching of frames
     dataset = torch.utils.data.TensorDataset(frames)
     loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=False, drop_last=False
+        dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=False
     )
 
     # Put the model into eval mode, and not computing gradients while in inference.
