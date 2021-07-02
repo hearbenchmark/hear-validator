@@ -28,14 +28,15 @@ class ValidateModel:
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
         self.module = None
-        self.sample_rate = None
         self.model = None
+        self.model_type = None
 
     def __call__(self):
         self.import_model()
         self.check_load_model()
         self.check_sample_rate()
         self.check_embedding_size()
+        self.check_timestamp_embeddings()
 
     def import_model(self):
         print(f"Importing {self.module_name}")
@@ -45,9 +46,14 @@ class ValidateModel:
         print("Checking load_model")
         self.model = self.module.load_model(self.model_file_path)
 
-        if not (
-            isinstance(self.model, tf.Module) or isinstance(self.model, torch.nn.Module)
-        ):
+        if isinstance(self.model, tf.Module):
+            self.model_type = "tf"
+            raise NotImplementedError("TensorFlow validation needs to be implemented")
+
+        elif isinstance(self.model, torch.nn.Module):
+            self.model_type = "torch"
+
+        else:
             raise ModelError(
                 f"Model must be either a PyTorch module: "
                 f"https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
@@ -87,6 +93,78 @@ class ValidateModel:
 
         if not isinstance(self.model.timestamp_embedding_size, int):
             raise ModelError("Model.timestamp_embedding_size must be an int")
+
+    def check_timestamp_embeddings(self):
+        print("Checking get_timestamp_embeddings")
+        if not hasattr(self.module, "get_timestamp_embeddings"):
+            raise ModelError(
+                "Your API must include a function " "'get_timestamp_embeddings'"
+            )
+
+        if self.model_type == "torch":
+            self.torch_timestamp_embeddings()
+        else:
+            raise NotImplementedError("Not implemented for TF")
+
+    def torch_timestamp_embeddings(self):
+        # Create a batch of test audio (white noise)
+        num_audio = 16
+        length = 2.0
+        audio_batch = torch.rand(
+            (num_audio, int(length * self.model.sample_rate)), device=self.device
+        )
+
+        # Audio samples [-1.0, 1.0]
+        audio_batch = (audio_batch * 2) - 1.0
+
+        # Try moving model to device
+        self.model.to(self.device)
+
+        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
+
+        # Get embeddings for the batch of white noise
+        embeddings, timestamps = self.module.get_timestamp_embeddings(
+            audio_batch, self.model
+        )
+
+        print(f"  - Received embedding of shape: {embeddings.shape}")
+
+        # Verify the output looks correct
+        if embeddings.dtype != torch.float32:
+            raise ModelError(
+                f"Expected embeddings to be {torch.float32}, received "
+                f"{embeddings.dtype}."
+            )
+
+        if embeddings.shape[0] != num_audio:
+            raise ModelError(
+                f"Passed in a batch of {num_audio} audio samples, but "
+                f"your model returned {embeddings.shape[0]}. These values "
+                f"should be the same."
+            )
+
+        if embeddings.shape[1] != timestamps.shape[0]:
+            raise ModelError(
+                f"Received {embeddings.shape[1]} timestamp embeddings for "
+                f"each audio in the batch. But received "
+                f"{timestamps.shape[0]} timestamps. These values should "
+                f"be the same."
+            )
+
+        if embeddings.shape[2] != self.model.timestamp_embedding_size:
+            raise ModelError(
+                f"Output embedding size is {embeddings.shape[2]}. Your "
+                f"model specified an embedding size of "
+                f"{self.model.timestamp_embedding_size} in "
+                "Model.timestamp_embedding_size. These values "
+                "should be the same."
+            )
+
+        # Check timestamp spacing
+        timestamp_diff = torch.diff(timestamps)
+        first_diff = timestamp_diff[0]
+        if not torch.all(torch.abs(timestamp_diff - first_diff) < 1e-3):
+            raise ModelError("Difference between timestamps ")
 
 
 def main(arguments):

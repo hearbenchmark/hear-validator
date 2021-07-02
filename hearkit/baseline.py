@@ -12,8 +12,8 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-# Default hop_size in ms
-HOP_SIZE = 25
+# Default hop_size in seconds
+HOP_SIZE = 0.025
 
 # Number of frames to batch process for timestamp embeddings
 BATCH_SIZE = 512
@@ -134,7 +134,7 @@ def frame_audio(
     return torch.stack(frames, dim=1), torch.tensor(timestamps)
 
 
-def get_timestamp_embedding(
+def get_timestamp_embeddings(
     audio: Tensor,
     model: torch.nn.Module,
 ) -> Tuple[Tensor, Tensor]:
@@ -145,7 +145,7 @@ def get_timestamp_embedding(
         model: Loaded model, in PyTorch or Tensorflow 2.x.
 
     Returns:
-        - Tensor: embedding, A float32 Tensor with shape (n_sounds, n_timestamp,
+        - Tensor: embeddings, A float32 Tensor with shape (n_sounds, n_timestamp,
             model.timestamp_embedding_size).
         - Tensor: timestamps, Centered timestamps in milliseconds corresponding
             to each embedding in the output.
