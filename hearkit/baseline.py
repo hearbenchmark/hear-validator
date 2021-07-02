@@ -43,6 +43,15 @@ class RandomProjectionMelEmbedding(torch.nn.Module):
             torch.rand(self.n_mels, self.embedding_size) / normalization
         )
 
+    # The scene embedding size and timestamp embedding sizes are the same
+    @property
+    def scene_embedding_size(self):
+        return self.embedding_size
+
+    @property
+    def timestamp_embedding_size(self):
+        return self.embedding_size
+
     def forward(self, x: Tensor):
         # Compute the real-valued Fourier transform on windowed input signal.
         x = torch.fft.rfft(x * self.window)

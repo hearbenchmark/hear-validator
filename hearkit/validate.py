@@ -35,6 +35,7 @@ class ValidateModel:
         self.import_model()
         self.check_load_model()
         self.check_sample_rate()
+        self.check_embedding_size()
 
     def import_model(self):
         print(f"Importing {self.module_name}")
@@ -54,11 +55,31 @@ class ValidateModel:
 
     def check_sample_rate(self):
         print("Checking model sample rate")
+        if not hasattr(self.model, "sample_rate"):
+            raise ModelError("Model must expose expected input audio "
+                             "sample rate as an attribute.")
+
         if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
             raise ModelError(
                 f"Input sample rate of {self.sample_rate} is invalid. "
                 f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}"
             )
+
+    def check_embedding_size(self):
+        print("Checking model embedding size")
+        if not hasattr(self.model, "scene_embedding_size"):
+            raise ModelError("Model must expose the output size of the scene "
+                             "embeddings as an attribute: scene_embedding_size")
+
+        if not isinstance(self.model.scene_embedding_size, int):
+            raise ModelError("Model.scene_embedding_size must be an int")
+
+        if not hasattr(self.model, "timestamp_embedding_size"):
+            raise ModelError("Model must expose the output size of the timestamp "
+                             "embeddings as an attribute: timestamp_embedding_size")
+
+        if not isinstance(self.model.timestamp_embedding_size, int):
+            raise ModelError("Model.timestamp_embedding_size must be an int")
 
 
 def main(arguments):
