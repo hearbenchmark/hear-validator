@@ -45,7 +45,9 @@ class ValidateModel:
         print("Checking load_model")
         self.model = self.module.load_model(self.model_file_path)
 
-        if not (isinstance(self.model, tf.Module) or isinstance(self.model, torch.nn.Module)):
+        if not (
+            isinstance(self.model, tf.Module) or isinstance(self.model, torch.nn.Module)
+        ):
             raise ModelError(
                 f"Model must be either a PyTorch module: "
                 f"https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
@@ -56,8 +58,9 @@ class ValidateModel:
     def check_sample_rate(self):
         print("Checking model sample rate")
         if not hasattr(self.model, "sample_rate"):
-            raise ModelError("Model must expose expected input audio "
-                             "sample rate as an attribute.")
+            raise ModelError(
+                "Model must expose expected input audio " "sample rate as an attribute."
+            )
 
         if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
             raise ModelError(
@@ -68,15 +71,19 @@ class ValidateModel:
     def check_embedding_size(self):
         print("Checking model embedding size")
         if not hasattr(self.model, "scene_embedding_size"):
-            raise ModelError("Model must expose the output size of the scene "
-                             "embeddings as an attribute: scene_embedding_size")
+            raise ModelError(
+                "Model must expose the output size of the scene "
+                "embeddings as an attribute: scene_embedding_size"
+            )
 
         if not isinstance(self.model.scene_embedding_size, int):
             raise ModelError("Model.scene_embedding_size must be an int")
 
         if not hasattr(self.model, "timestamp_embedding_size"):
-            raise ModelError("Model must expose the output size of the timestamp "
-                             "embeddings as an attribute: timestamp_embedding_size")
+            raise ModelError(
+                "Model must expose the output size of the timestamp "
+                "embeddings as an attribute: timestamp_embedding_size"
+            )
 
         if not isinstance(self.model.timestamp_embedding_size, int):
             raise ModelError("Model.timestamp_embedding_size must be an int")
