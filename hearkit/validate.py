@@ -33,25 +33,16 @@ class ValidateModel:
 
     def __call__(self):
         self.import_model()
-        self.check_input_sample_rate()
         self.check_load_model()
+        self.check_sample_rate()
 
     def import_model(self):
         print(f"Importing {self.module_name}")
         self.module = importlib.import_module(self.module_name)
 
-    def check_input_sample_rate(self):
-        print("Checking input_sample_rate")
-        self.sample_rate = self.module.input_sample_rate()
-        if self.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
-            raise ModelError(
-                f"Input sample rate of {self.sample_rate} is invalid. "
-                f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}"
-            )
-
     def check_load_model(self):
         print("Checking load_model")
-        self.model = self.module.load_model(self.model_file_path, self.device)
+        self.model = self.module.load_model(self.model_file_path)
 
         if not (isinstance(self.model, tf.Module) or isinstance(self.model, torch.nn.Module)):
             raise ModelError(
@@ -59,6 +50,14 @@ class ValidateModel:
                 f"https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
                 f"or a tensorflow module: "
                 f"https://www.tensorflow.org/api_docs/python/tf/Module"
+            )
+
+    def check_sample_rate(self):
+        print("Checking model sample rate")
+        if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
+            raise ModelError(
+                f"Input sample rate of {self.sample_rate} is invalid. "
+                f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}"
             )
 
 
