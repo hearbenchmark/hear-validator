@@ -10,7 +10,6 @@ setup(
     author="HEAR 2021 NeurIPS Competition Committee",
     author_email="deep-at-neuralaudio.ai",
     url="https://github.com/neuralaudio/hear-starter-kit",
-    download_url="https://github.com/neuralaudio/hear-starter-kit",
     license="Apache-2.0",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,7 +17,7 @@ setup(
         "Bug Tracker": "https://github.com/neuralaudio/hear-starter-kit/issues",
         "Source Code": "https://github.com/neuralaudio/hear-starter-kit",
     },
-    packages=find_packages(exclude=("tests",)),
+    packages=find_packages(),
     python_requires=">=3.6",
     install_requires=["librosa", "tensorflow", "torch"],
     extras_require={
@@ -28,5 +27,4 @@ setup(
             "black",  # Used in pre-commit hooks
         ],
     },
-    classifiers=[],
 )
