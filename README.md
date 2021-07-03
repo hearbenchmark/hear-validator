@@ -16,11 +16,11 @@ and each task.
 For full competition details please visit the
 [competition website.](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html)
 
-**Submissions are now open!**
-[Submit your entry.](https://docs.google.com/forms/d/e/1FAIpQLSfSz7l4Aohg4JD_TTqKcIOkejM_ws0ho4kfD2nDeKQ4YWz5RA/viewform?usp=sf_link)
-
-We will be holding monthly leaderboard
-updates up until the final submission deadline of October 15th 2021.
+**Submissions are open!**
+[Submit your entry](https://docs.google.com/forms/d/e/1FAIpQLSfSz7l4Aohg4JD_TTqKcIOkejM_ws0ho4kfD2nDeKQ4YWz5RA/viewform?usp=sf_link)
+prior to July 15th 2021 AoE to be included in the first leaderboard update.
+We will be holding monthly leaderboard updates up until the final submission
+deadline of October 15th 2021.
 
 ### Starter Kit
 This repository contains code to help participants start building and testing a python3
@@ -55,7 +55,7 @@ It accepts any module as input and verifies that the correct functions are expos
 produce an output that is formed correctly. To run the validation
 script against a module:
 ```
-python -m hearkit.validate <module-to-test> -m <path-to-model-checkpoint-file>
+python3 -m hearkit.validate <module-to-test> -m <path-to-model-checkpoint-file>
 ```
 Example usage with the baseline, which contains no model checkpoint weights:
 ```python
@@ -69,8 +69,7 @@ pip installable packages. This starter-kit provides an example on how to create 
 minimal pip installable package. The important components of this are:
 1) The `hearkit` package, which is the `hearkit` subfolder containing a `__init__.py`
     file.
-2) The `setup.py` python file which is the main config file containing information on
-    how to install the package including all dependencies.
+2) The `setup.py` python file which is the main config file for installation.
 
 To create your own package for submission you can fork this repo, rename the `hearkit`
 subfolder to your package name, and update the fields in the `setup.py` config to the
