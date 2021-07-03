@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
+"""
+This command-line script can be called to validate any module against the HEAR 2021
+API to ensure that all the current functions and attributes are available, can be called
+with the expected input, and produce correctly formed output. To see the API that this
+was built against, please visit
+https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api
 
-"""A simple python script template.
+Usage:
+    python3 -m hearkit.valdate <module-to-test> -m <path-to-model-checkpoint-file>
+
+Example usage:
+    python -m hearkit.validate hearkit.baseline
+
+TODO:
+    - Build this out to support TensorFlow models as well.
 """
 
-import os
 import sys
 import argparse
 import importlib
@@ -252,8 +264,8 @@ def main(arguments):
     )
     args = parser.parse_args(arguments)
 
+    # Run validation
     ValidateModel(args.module, args.model)()
-
     print("Looks good!")
 
 
