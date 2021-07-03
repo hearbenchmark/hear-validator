@@ -16,20 +16,26 @@ and each task.
 For full competition details please visit the
 [competition website.](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html)
 
+**Submissions are now open!**
+[Submit your entry.](https://docs.google.com/forms/d/e/1FAIpQLSfSz7l4Aohg4JD_TTqKcIOkejM_ws0ho4kfD2nDeKQ4YWz5RA/viewform?usp=sf_link)
+
+We will be holding monthly leaderboard
+updates up until the final submission deadline of October 15th 2021.
+
 ### Starter Kit
 This repository contains code to help participants start building and testing a python3
 module and PyTorch / TensorFlow audio embedding model for the HEAR 2021 competition.
 This repo is also setup as a pip3 installable package to demonstrate the submission
-requirements. Contents of the starter-kit:
+requirements. Contents of the starter-kit include:
 - Baseline audio embedding model
 - Script to validate modules against the competition API requirements
 - Example setup.py file to demonstrate packaging for submission
 
 #### Installation
 This starter-kit can be installed using a
-[local source tree pip install](https://packaging.python.org/tutorials/installing-packages/#installing-from-a-local-src-tree),
-which is the same method that will be used by the competition organizers to install
-competition submissions. You can install the starter kit as follows:
+local source tree pip install, which is the same method that will be used by the
+organizers to install competition submissions.
+You can install the starter kit as follows:
 1) `git clone https://github.com/neuralaudio/hear-starter-kit.git`
 2) `python3 -m pip install ./hear-starter-kit`
 
@@ -46,14 +52,14 @@ that is required for competition submissions.
 The validation script checks a module against the
 [common API](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api).
 It accepts any module as input and verifies that the correct functions are exposed and
-produce output that is formed correctly given a standard input. To run the validation
+produce an output that is formed correctly. To run the validation
 script against a module:
 ```
 python -m hearkit.validate <module-to-test> -m <path-to-model-checkpoint-file>
 ```
 Example usage with the baseline, which contains no model checkpoint weights:
 ```python
-python -m hearkit.validate hearkit.baseline
+python3 -m hearkit.validate hearkit.baseline
 ```
 
 #### Packaging
@@ -72,13 +78,18 @@ reflect your package and team.
 
 You can then install your package locally using:
 ```python
-python -m pip install <path-to-project-root>
+python3 -m pip install <path-to-project-root>
 ```
 Where the project root is the folder containing `setup.py`.
 
+If your current working directory is the root of your project you can run:
+```python
+python3 -m pip install .
+```
+
 To install in developer mode while you are working on your model:
 ```python
-python -m pip install -e <path-to-project-root>
+python3 -m pip install -e <path-to-project-root>
 ```
 
 For a more detailed tutorial on packaging we recommend checking out this
@@ -87,10 +98,3 @@ For a more detailed tutorial on packaging we recommend checking out this
 We realize that the pip installable requirement may pose a challenge to some entrants.
 If this criterion poses an issue for you, the HEAR team would be glad to help. Please
 each out to us by email at deep-at-neuralaudio.ai.
-
-### Submissions
-**Submissions are now open!**
-[Submit your entry.](https://docs.google.com/forms/d/e/1FAIpQLSfSz7l4Aohg4JD_TTqKcIOkejM_ws0ho4kfD2nDeKQ4YWz5RA/viewform?usp=sf_link)
-
-We will be holding monthly leaderboard
-updates up until the final submission deadline of October 15th 2021.
