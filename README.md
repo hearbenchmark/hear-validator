@@ -22,7 +22,7 @@ prior to July 15th 2021 AoE to be included in the first leaderboard update.
 We will be holding monthly leaderboard updates up until the final submission
 deadline of October 15th 2021.
 
-### Starter Kit
+## Starter Kit
 This repository contains code to help participants start building and testing a python3
 module and PyTorch / TensorFlow audio embedding model for the HEAR 2021 competition.
 This repo is also setup as a pip3 installable package to demonstrate the submission
@@ -31,7 +31,7 @@ requirements. Contents of the starter-kit include:
 - Script to validate modules against the competition API requirements
 - Example setup.py file to demonstrate packaging for submission
 
-#### Installation
+### Installation
 This starter-kit can be installed using a
 local source tree pip install, which is the same method that will be used by the
 organizers to install competition submissions.
@@ -41,14 +41,14 @@ You can install the starter kit as follows:
 
 This will install a package called `hearkit` and all the required dependencies.
 
-#### Baseline
+### Baseline
 The baseline model is located at [hearkit/baseline.py](hearkit/baseline.py). It is a
 DSP-based implementation that uses a random projection on mel-spectrums to create
 audio embeddings with a dimensionality of 4096. The baseline model implements the
 [common API](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api)
 that is required for competition submissions.
 
-#### Validation Script
+### Validation Script
 The validation script checks a module against the
 [common API](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api).
 It accepts any module as input and verifies that the correct functions are exposed and
@@ -62,7 +62,7 @@ Example usage with the baseline, which contains no model checkpoint weights:
 python3 -m hearkit.validate hearkit.baseline
 ```
 
-#### Packaging
+### Packaging
 A goal of HEAR 2021 is to promote the development of general purpose audio embeddings
 that are easy to access and easy to use. As such, we require that all submissions are
 pip installable packages. This starter-kit provides an example on how to create a
@@ -97,3 +97,18 @@ For a more detailed tutorial on packaging we recommend checking out this
 We realize that the pip installable requirement may pose a challenge to some entrants.
 If this criterion poses an issue for you, the HEAR team would be glad to help. Please
 each out to us by email at deep-at-neuralaudio.ai.
+
+## Development
+Clone repo:
+```
+git clone https://github.com/neuralaudio/hear-starter-kit.git
+cd hear-start-kit
+```
+Install in development mode:
+```
+python3 -m pip install -e ".[dev]"
+```
+Install pre-commit hooks:
+```
+pre-commit install
+```
