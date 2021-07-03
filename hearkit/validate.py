@@ -7,6 +7,7 @@ import os
 import sys
 import argparse
 import importlib
+import warnings
 
 import torch
 import tensorflow as tf
@@ -160,11 +161,24 @@ class ValidateModel:
                 "should be the same."
             )
 
-        # Check timestamp spacing
+        # Check that there is a consistent spacing between timestamps.
+        # Warn if the spacing is greater than 50ms
         timestamp_diff = torch.diff(timestamps)
-        first_diff = timestamp_diff[0]
-        if not torch.all(torch.abs(timestamp_diff - first_diff) < 1e-3):
-            raise ModelError("Difference between timestamps ")
+        average_diff = torch.mean(timestamp_diff)
+        print(f"  - Average spacing between timestamps is {average_diff} seconds")
+
+        if average_diff > 0.05:
+            warnings.warn(
+                "We suggest a spacing between timestamps less than or equal "
+                "to 50ms to accommodate a tolerance of 50ms for music "
+                "transcription tasks."
+            )
+
+        if not torch.all(torch.abs(timestamp_diff - average_diff) < 1e-3):
+            raise ModelError(
+                "Timestamps should occur at regular intervals. Found "
+                "a deviation larger than 1ms between adjacent timestamps."
+            )
 
 
 def main(arguments):
