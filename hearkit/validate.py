@@ -38,6 +38,7 @@ class ValidateModel:
         self.check_sample_rate()
         self.check_embedding_size()
         self.check_timestamp_embeddings()
+        self.check_scene_embeddings()
 
     def import_model(self):
         print(f"Importing {self.module_name}")
@@ -99,11 +100,21 @@ class ValidateModel:
         print("Checking get_timestamp_embeddings")
         if not hasattr(self.module, "get_timestamp_embeddings"):
             raise ModelError(
-                "Your API must include a function " "'get_timestamp_embeddings'"
+                "Your API must include a function: 'get_timestamp_embeddings'"
             )
 
         if self.model_type == "torch":
             self.torch_timestamp_embeddings()
+        else:
+            raise NotImplementedError("Not implemented for TF")
+
+    def check_scene_embeddings(self):
+        print("Checking get_scene_embeddings")
+        if not hasattr(self.module, "get_scene_embeddings"):
+            raise ModelError("Your API must include a function: 'get_scene_embeddings'")
+
+        if self.model_type == "torch":
+            self.torch_scene_embeddings()
         else:
             raise NotImplementedError("Not implemented for TF")
 
@@ -164,12 +175,12 @@ class ValidateModel:
         # Check that there is a consistent spacing between timestamps.
         # Warn if the spacing is greater than 50ms
         timestamp_diff = torch.diff(timestamps)
-        average_diff = torch.mean(timestamp_diff)
-        print(f"  - Average spacing between timestamps is {average_diff} seconds")
+        average_diff = torch.mean(timestamp_diff.float())
+        print(f"  - Interval between timestamps is {average_diff}ms")
 
-        if average_diff > 0.05:
+        if average_diff > 50.0:
             warnings.warn(
-                "We suggest a spacing between timestamps less than or equal "
+                "We suggest a interval between timestamps less than or equal "
                 "to 50ms to accommodate a tolerance of 50ms for music "
                 "transcription tasks."
             )
@@ -178,6 +189,50 @@ class ValidateModel:
             raise ModelError(
                 "Timestamps should occur at regular intervals. Found "
                 "a deviation larger than 1ms between adjacent timestamps."
+            )
+
+    def torch_scene_embeddings(self):
+        # Create a batch of test audio (white noise)
+        num_audio = 8
+        length = 3.74
+        audio_batch = torch.rand(
+            (num_audio, int(length * self.model.sample_rate)), device=self.device
+        )
+
+        # Audio samples [-1.0, 1.0]
+        audio_batch = (audio_batch * 2) - 1.0
+
+        # Try moving model to device
+        self.model.to(self.device)
+
+        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
+
+        # Get embeddings for the batch of white noise
+        embeddings = self.module.get_scene_embeddings(audio_batch, self.model)
+
+        print(f"  - Received embedding of shape: {embeddings.shape}")
+
+        # Verify the output looks correct
+        if embeddings.dtype != torch.float32:
+            raise ModelError(
+                f"Expected embeddings to be {torch.float32}, received "
+                f"{embeddings.dtype}."
+            )
+
+        if embeddings.shape[0] != num_audio:
+            raise ModelError(
+                f"Passed in a batch of {num_audio} audio samples, but "
+                f"your model returned {embeddings.shape[0]}. These values "
+                f"should be the same."
+            )
+
+        if embeddings.shape[1] != self.model.scene_embedding_size:
+            raise ModelError(
+                f"Output embedding size is {embeddings.shape[1]}. Your "
+                f"model specified an embedding size of "
+                f"{self.model.scene_embedding_size} in "
+                "Model.scene_embedding_size. These values "
+                "should be the same."
             )
 
 

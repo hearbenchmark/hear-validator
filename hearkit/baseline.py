@@ -5,15 +5,15 @@ This is simply a mel spectrogram followed by random projection.
 """
 
 import math
-from typing import Optional, Tuple
+from typing import Tuple
 
 import librosa
 import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-# Default hop_size in seconds
-HOP_SIZE = 0.025
+# Default hop_size in milliseconds
+HOP_SIZE = 25
 
 # Number of frames to batch process for timestamp embeddings
 BATCH_SIZE = 512
@@ -102,7 +102,7 @@ def frame_audio(
         audio: input audio, expects a 2d Tensor of shape:
             (batch_size, num_samples)
         frame_size: the number of samples each resulting frame should be
-        hop_size: hop size between frames, in seconds
+        hop_size: hop size between frames, in milliseconds
         sample_rate: sampling rate of the input audio
 
     Returns:
@@ -110,6 +110,10 @@ def frame_audio(
         - A 1d Tensor of timestamps corresponding to the frame
         centers.
     """
+
+    # Zero pad the beginning and the end of the incoming audio with half a frame number
+    # of samples. This centers the audio in the middle of each frame with respect to
+    # the timestamps.
     audio = F.pad(audio, (frame_size // 2, frame_size - frame_size // 2))
     num_padded_samples = audio.shape[1]
 
@@ -125,7 +129,7 @@ def frame_audio(
         # Increment the frame_number and break the loop if the next frame end
         # will extend past the end of the padded audio samples
         frame_number += 1
-        frame_start = int(round(sample_rate * frame_number * hop_size))
+        frame_start = int(round(sample_rate * frame_number * hop_size / 1000))
         frame_end = frame_start + frame_size
 
         if not frame_end <= num_padded_samples:
@@ -139,10 +143,12 @@ def get_timestamp_embeddings(
     model: torch.nn.Module,
 ) -> Tuple[Tensor, Tensor]:
     """
+    This function returns embeddings at regular intervals centered at timestamps. Both
+    the embeddings and corresponding timestamps (in milliseconds) are returned.
+
     Args:
-        audio: n_sounds x n_samples of mono audio in the range [-1, 1]. All sounds in
-            a batch will be padded/trimmed to the same length.
-        model: Loaded model, in PyTorch or Tensorflow 2.x.
+        audio: n_sounds x n_samples of mono audio in the range [-1, 1].
+        model: Loaded model.
 
     Returns:
         - Tensor: embeddings, A float32 Tensor with shape (n_sounds, n_timestamp,
@@ -167,8 +173,7 @@ def get_timestamp_embeddings(
     model = model.to(audio.device)
 
     # Split the input audio signals into frames and then flatten to create a tensor
-    # of audio frames that can be batch processed. We will unflatten back out to
-    # (audio_baches, num_frames, embedding_size) after creating embeddings.
+    # of audio frames that can be batch processed.
     frames, timestamps = frame_audio(
         audio,
         frame_size=model.n_fft,
@@ -196,3 +201,25 @@ def get_timestamp_embeddings(
     embeddings = embeddings.unflatten(0, (audio_batches, num_frames))
 
     return embeddings, timestamps
+
+
+def get_scene_embeddings(
+    audio: Tensor,
+    model: torch.nn.Module,
+) -> Tensor:
+    """
+    This function returns a single embedding for each audio clip. In this baseline
+    implementation we simply summarize the temporal embeddings from
+    get_timestamp_embeddings() using torch.mean().
+
+    Args:
+        audio: n_sounds x n_samples of mono audio in the range [-1, 1]. All sounds in
+            a batch will be padded/trimmed to the same length.
+        model: Loaded model.
+
+    Returns:
+        - embeddings, A float32 Tensor with shape (n_sounds, model.scene_embedding_size).
+    """
+    embeddings, _ = get_timestamp_embeddings(audio, model)
+    embeddings = torch.mean(embeddings, dim=1)
+    return embeddings
