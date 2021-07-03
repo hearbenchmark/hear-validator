@@ -39,6 +39,7 @@ class ValidateModel:
         self.module_name = module_name
         self.model_file_path = model_file_path
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        print(f"Running validation using device: {self.device}.")
 
         self.module = None
         self.model = None
