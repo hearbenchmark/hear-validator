@@ -7,10 +7,10 @@ was built against, please visit
 https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api
 
 Usage:
-    python3 -m hearkit.valdate <module-to-test> -m <path-to-model-checkpoint-file>
+    python3 -m hear-validator <module-to-test> -m <path-to-model-checkpoint-file>
 
 Example usage:
-    python -m hearkit.validate hearkit.baseline
+    python -m hear_validator hearkit.baseline
 
 TODO:
     - Build this out to support TensorFlow models as well.
@@ -249,7 +249,7 @@ class ValidateModel:
             )
 
 
-def main(arguments):
+def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -263,7 +263,7 @@ def main(arguments):
         type=str,
         help="Load model weights from this location",
     )
-    args = parser.parse_args(arguments)
+    args = parser.parse_args()
 
     # Run validation
     ValidateModel(args.module, args.model)()
@@ -271,4 +271,4 @@ def main(arguments):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    main()
