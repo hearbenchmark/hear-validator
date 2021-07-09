@@ -7,10 +7,10 @@ was built against, please visit
 https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api
 
 Usage:
-    python3 -m hear-validator <module-to-test> -m <path-to-model-checkpoint-file>
+    hear-validator <module-to-test> -m <path-to-model-checkpoint-file>
 
 Example usage:
-    python -m hear_validator hearkit.baseline
+    hear-validator hearbaseline
 
 TODO:
     - Build this out to support TensorFlow models as well.
