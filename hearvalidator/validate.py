@@ -7,10 +7,10 @@ was built against, please visit
 https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api
 
 Usage:
-    hear-validator <module-to-test> -m <path-to-model-checkpoint-file>
+    hear-validator <module-to-test> -m <path-to-model-checkpoint-file> -d <device>
 
 Example usage:
-    hear-validator hearbaseline
+    hear-validator hearbaseline -m naive_baseline.pt -d cuda
 
 TODO:
     - Build this out to support TensorFlow models as well.
@@ -34,11 +34,10 @@ class ValidateModel:
 
     ACCEPTABLE_SAMPLE_RATE = [16000, 22050, 44100, 48000]
 
-    def __init__(self, module_name: str, model_file_path: str):
+    def __init__(self, module_name: str, model_file_path: str, device: str = None):
         self.module_name = module_name
         self.model_file_path = model_file_path
-        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        print(f"Running validation using device: {self.device}.")
+        self.device = device
 
         self.module = None
         self.model = None
@@ -73,8 +72,14 @@ class ValidateModel:
             self.model_type = "tf"
             raise NotImplementedError("TensorFlow validation needs to be implemented")
 
+        # PyTorch module -- also setup the device if None was passed
         elif isinstance(self.model, torch.nn.Module):
             self.model_type = "torch"
+            if self.device is None:
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            print(f"  - Received torch Module, loading onto device: {self.device}")
+            self.model.to(self.device)
 
         else:
             raise ModelError(
@@ -155,9 +160,6 @@ class ValidateModel:
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
 
-        # Try moving model to device
-        self.model.to(self.device)
-
         print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
 
         # Get embeddings for the batch of white noise
@@ -228,9 +230,6 @@ class ValidateModel:
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
 
-        # Try moving model to device
-        self.model.to(self.device)
-
         print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
 
         # Get embeddings for the batch of white noise
@@ -274,12 +273,20 @@ def main():
         "-m",
         default="",
         type=str,
-        help="Load model weights from this location",
+        help="Load model from this location",
+    )
+    parser.add_argument(
+        "--device",
+        "-d",
+        default=None,
+        type=str,
+        help="Device to run validation on. If not provided will try to use GPU if "
+        "available.",
     )
     args = parser.parse_args()
 
     # Run validation
-    ValidateModel(args.module, args.model)()
+    ValidateModel(args.module, args.model, device=args.device)()
     print("Looks good!")
 
 
