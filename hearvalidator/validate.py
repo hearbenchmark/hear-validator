@@ -16,7 +16,6 @@ TODO:
     - Build this out to support TensorFlow models as well.
 """
 
-import sys
 import argparse
 import importlib
 import warnings
@@ -59,7 +58,16 @@ class ValidateModel:
 
     def check_load_model(self):
         print("Checking load_model")
-        self.model = self.module.load_model(self.model_file_path)
+        if not hasattr(self.module, "load_model"):
+            raise ModelError("Your API must include a function: 'load_model'")
+
+        # Try to load the module
+        if self.model_file_path:
+            print(f"  - Loading model with weights file: {self.model_file_path}")
+            self.model = self.module.load_model(self.model_file_path)
+        else:
+            print(f"  - No weight file provided. Using default")
+            self.model = self.module.load_model()
 
         if isinstance(self.model, tf.Module):
             self.model_type = "tf"
@@ -83,6 +91,7 @@ class ValidateModel:
                 "Model must expose expected input audio " "sample rate as an attribute."
             )
 
+        print(f"  - Model sample rate is: {self.model.sample_rate}")
         if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
             raise ModelError(
                 f"Input sample rate of {self.sample_rate} is invalid. "
@@ -100,11 +109,15 @@ class ValidateModel:
         if not isinstance(self.model.scene_embedding_size, int):
             raise ModelError("Model.scene_embedding_size must be an int")
 
+        print(f"  - scene_embedding_size: {self.model.scene_embedding_size}")
+
         if not hasattr(self.model, "timestamp_embedding_size"):
             raise ModelError(
                 "Model must expose the output size of the timestamp "
                 "embeddings as an attribute: timestamp_embedding_size"
             )
+
+        print(f"  - timestamp_embedding_size: {self.model.timestamp_embedding_size}")
 
         if not isinstance(self.model.timestamp_embedding_size, int):
             raise ModelError("Model.timestamp_embedding_size must be an int")
