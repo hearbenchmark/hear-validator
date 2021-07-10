@@ -145,8 +145,6 @@ class ValidateModel:
         if not isinstance(self.model.timestamp_embedding_size, int):
             raise ModelError("Model.timestamp_embedding_size must be an int")
 
-        print(f"  - timestamp_embedding_size: {self.model.timestamp_embedding_size}")
-
     def check_timestamp_embeddings(self):
         print("Checking get_timestamp_embeddings")
         if not hasattr(self.module, "get_timestamp_embeddings"):
