@@ -11,12 +11,8 @@ Usage:
 
 Example usage:
     hear-validator hearbaseline -m naive_baseline.pt -d cuda
-
-TODO:
-    - Build this out to support TensorFlow models as well.
 """
 
-import os
 import argparse
 import importlib
 import warnings
@@ -49,12 +45,15 @@ class ValidateModel:
         self.check_load_model()
 
         # Perform validation. If a tensorflow model was loaded and a specific
-        # device was specified, then use that device.
-        print(self.model_type, self.device)
+        # device was specified, then reload the model on the correct device.
+        # This is a bit awkward but I wanted to avoid all the tensorflow initialization
+        # stuff before loading a module, which could potentially be a PyTorch module.
+        # So we only get into the tensorflow device stuff if we found a tf module.
         if self.model_type == "tf" and self.device is not None:
             with tf.device(self.device):
                 # Re-import model using correct device
                 print(f"Reloading tf model on {self.device}")
+                del self.model
                 self.check_load_model()
                 self.validate_model()
         else:
@@ -83,8 +82,10 @@ class ValidateModel:
             print(f"  - No weight file provided. Using default")
             self.model = self.module.load_model()
 
+        # TensorFlow module
         if isinstance(self.model, tf.Module):
             self.model_type = "tf"
+            print(f"  - Received tensorflow Module: {self.model}")
 
         # PyTorch module -- also setup the device if None was passed
         elif isinstance(self.model, torch.nn.Module):
@@ -92,7 +93,10 @@ class ValidateModel:
             if self.device is None:
                 self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            print(f"  - Received torch Module, loading onto device: {self.device}")
+            print(
+                f"  - Received torch Module: {self.model}. "
+                f"Loading onto device: {self.device}"
+            )
             self.model.to(self.device)
 
         else:
