@@ -45,6 +45,16 @@ class ValidateModel:
 
     def __call__(self):
         self.import_model()
+
+        # Perform validation. If a tensorflow model was loaded and a specific
+        # device was specified, then use that device.
+        if self.model_type == "tf" and self.device is not None:
+            with tf.device(self.device):
+                self.validate()
+        else:
+            self.validate()
+
+    def validate(self):
         self.check_load_model()
         self.check_sample_rate()
         self.check_embedding_size()
@@ -60,7 +70,7 @@ class ValidateModel:
         if not hasattr(self.module, "load_model"):
             raise ModelError("Your API must include a function: 'load_model'")
 
-        # Try to load the module
+        # Try to load the module. Use a weight file if one was provided
         if self.model_file_path:
             print(f"  - Loading model with weights file: {self.model_file_path}")
             self.model = self.module.load_model(self.model_file_path)
