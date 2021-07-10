@@ -48,11 +48,11 @@ class ValidateModel:
 
         # Perform validation. If a tensorflow model was loaded and a specific
         # device was specified, then use that device.
-        if self.model_type == "tf" and self.device is not None:
-            with tf.device(self.device):
-                self.validate()
-        else:
-            self.validate()
+        if self.model_type == "tf" and self.device == "cpu":
+            tf.config.set_visible_devices([])
+            self.import_model()
+
+        self.validate()
 
     def validate(self):
         self.check_load_model()
