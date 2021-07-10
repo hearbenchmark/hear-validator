@@ -46,19 +46,21 @@ class ValidateModel:
 
     def __call__(self):
         self.import_model()
+        self.check_load_model()
 
         # Perform validation. If a tensorflow model was loaded and a specific
         # device was specified, then use that device.
+        print(self.model_type, self.device)
         if self.model_type == "tf" and self.device is not None:
             with tf.device(self.device):
                 # Re-import model using correct device
-                self.import_model()
-                self.validate()
+                print(f"Reloading tf model on {self.device}")
+                self.check_load_model()
+                self.validate_model()
         else:
-            self.validate()
+            self.validate_model()
 
-    def validate(self):
-        self.check_load_model()
+    def validate_model(self):
         self.check_sample_rate()
         self.check_embedding_size()
         self.check_timestamp_embeddings()
