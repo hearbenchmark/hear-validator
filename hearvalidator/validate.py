@@ -289,7 +289,6 @@ class ValidateModel:
         audio_batch = tf.random.uniform(
             (num_audio, int(length * self.model.sample_rate))
         )
-        print(audio_batch.device)
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
