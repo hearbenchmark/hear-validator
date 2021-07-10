@@ -16,6 +16,7 @@ TODO:
     - Build this out to support TensorFlow models as well.
 """
 
+import os
 import argparse
 import importlib
 import warnings
@@ -48,11 +49,13 @@ class ValidateModel:
 
         # Perform validation. If a tensorflow model was loaded and a specific
         # device was specified, then use that device.
-        if self.model_type == "tf" and self.device == "cpu":
-            tf.config.set_visible_devices([])
-            self.import_model()
-
-        self.validate()
+        if self.model_type == "tf" and self.device is not None:
+            with tf.device(self.device):
+                # Re-import model using correct device
+                self.import_model()
+                self.validate()
+        else:
+            self.validate()
 
     def validate(self):
         self.check_load_model()
@@ -280,6 +283,7 @@ class ValidateModel:
         audio_batch = tf.random.uniform(
             (num_audio, int(length * self.model.sample_rate))
         )
+        print(audio_batch.device)
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
