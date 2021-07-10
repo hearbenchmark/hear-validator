@@ -15,9 +15,10 @@ This will install a command-line tool: `hear-validator`
 
 ### Usage
 ```python
-hear-validator <module-to-test> --model <path-to-model-checkpoint-file>
+hear-validator <module-to-test> --model <path-to-model-checkpoint-file> --device <device-to-run-on>
 ```
+If the `device` isn't specified then this will run on a GPU if one is present.
 ##### Example usage:
 ```python
-hear-validator hearbaseline --model /path/to/baseline-weights
+hear-validator hearbaseline --model /path/to/baseline-weights --device cuda
 ```
