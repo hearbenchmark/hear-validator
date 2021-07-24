@@ -79,7 +79,7 @@ class ValidateModel:
             print(f"  - Loading model with weights file: {self.model_file_path}")
             self.model = self.module.load_model(self.model_file_path)
         else:
-            print(f"  - No weight file provided. Using default")
+            print("  - No weight file provided. Using default")
             self.model = self.module.load_model()
 
         # TensorFlow module
@@ -101,10 +101,10 @@ class ValidateModel:
 
         else:
             raise ModelError(
-                f"Model must be either a PyTorch module: "
-                f"https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
-                f"or a tensorflow module: "
-                f"https://www.tensorflow.org/api_docs/python/tf/Module"
+                "Model must be either a PyTorch module: "
+                "https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
+                "or a tensorflow module: "
+                "https://www.tensorflow.org/api_docs/python/tf/Module"
             )
 
     def check_sample_rate(self):
