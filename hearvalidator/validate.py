@@ -201,12 +201,11 @@ class ValidateModel:
                 f"should be the same."
             )
 
-        if embeddings.shape[1] != timestamps.shape[0]:
+        if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
-                f"Received {embeddings.shape[1]} timestamp embeddings for "
-                f"each audio in the batch. But received "
-                f"{timestamps.shape[0]} timestamps. These values should "
-                f"be the same."
+                "Output shape of the timestamps from get_timestamp_embeddings is"
+                f"incorrect. Expected {embeddings.shape[:2]}, but received "
+                f"{timestamps.shape}."
             )
 
         if embeddings.shape[2] != self.model.timestamp_embedding_size:
