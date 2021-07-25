@@ -203,7 +203,7 @@ class ValidateModel:
 
         if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
-                "Output shape of the timestamps from get_timestamp_embeddings is"
+                "Output shape of the timestamps from get_timestamp_embeddings is "
                 f"incorrect. Expected {embeddings.shape[:2]}, but received "
                 f"{timestamps.shape}."
             )
@@ -315,7 +315,7 @@ class ValidateModel:
 
         if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
-                "Output shape of the timestamps from get_timestamp_embeddings is"
+                "Output shape of the timestamps from get_timestamp_embeddings is "
                 f"incorrect. Expected {embeddings.shape[:2]}, but received "
                 f"{timestamps.shape}."
             )
