@@ -186,6 +186,7 @@ class ValidateModel:
         )
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
+        print(f"  - Received timestamps of shape: {timestamps.shape}")
 
         # Verify the output looks correct
         if embeddings.dtype != torch.float32:
@@ -298,6 +299,7 @@ class ValidateModel:
         )
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
+        print(f"  - Received timestamps of shape: {timestamps.shape}")
 
         # Verify the output looks correct
         if embeddings.dtype != tf.float32:
