@@ -186,6 +186,7 @@ class ValidateModel:
         )
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
+        print(f"  - Received timestamps of shape: {timestamps.shape}")
 
         # Verify the output looks correct
         if embeddings.dtype != torch.float32:
@@ -201,12 +202,11 @@ class ValidateModel:
                 f"should be the same."
             )
 
-        if embeddings.shape[1] != timestamps.shape[0]:
+        if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
-                f"Received {embeddings.shape[1]} timestamp embeddings for "
-                f"each audio in the batch. But received "
-                f"{timestamps.shape[0]} timestamps. These values should "
-                f"be the same."
+                "Output shape of the timestamps from get_timestamp_embeddings is "
+                f"incorrect. Expected {embeddings.shape[:2]}, but received "
+                f"{timestamps.shape}."
             )
 
         if embeddings.shape[2] != self.model.timestamp_embedding_size:
@@ -299,6 +299,7 @@ class ValidateModel:
         )
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
+        print(f"  - Received timestamps of shape: {timestamps.shape}")
 
         # Verify the output looks correct
         if embeddings.dtype != tf.float32:
@@ -314,12 +315,11 @@ class ValidateModel:
                 f"should be the same."
             )
 
-        if embeddings.shape[1] != timestamps.shape[0]:
+        if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
-                f"Received {embeddings.shape[1]} timestamp embeddings for "
-                f"each audio in the batch. But received "
-                f"{timestamps.shape[0]} timestamps. These values should "
-                f"be the same."
+                "Output shape of the timestamps from get_timestamp_embeddings is "
+                f"incorrect. Expected {embeddings.shape[:2]}, but received "
+                f"{timestamps.shape}."
             )
 
         if embeddings.shape[2] != self.model.timestamp_embedding_size:
@@ -333,7 +333,7 @@ class ValidateModel:
 
         # Check that there is a consistent spacing between timestamps.
         # Warn if the spacing is greater than 50ms
-        timestamp_diff = timestamps[1:] - timestamps[:-1]
+        timestamp_diff = timestamps[:, 1:] - timestamps[:, :-1]
         average_diff = tf.math.reduce_mean(timestamp_diff)
         print(f"  - Interval between timestamps is {average_diff}ms")
 
