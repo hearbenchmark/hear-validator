@@ -195,6 +195,20 @@ class ValidateModel:
                 f"{embeddings.dtype}."
             )
 
+        if embeddings.ndim != 3:
+            raise ModelError(
+                "Output dimensions of the embeddings from get_timestamp_embeddings is "
+                f"incorrect. Expected 3 dimensions, but received shape"
+                f"{embeddings.shape}."
+            )
+
+        if timestamps.ndim != 2:
+            raise ModelError(
+                "Output dimensions of the timestamps from get_timestamp_embeddings is "
+                f"incorrect. Expected 2 dimensions, but received shape"
+                f"{timestamps.shape}."
+            )
+
         if embeddings.shape[0] != num_audio:
             raise ModelError(
                 f"Passed in a batch of {num_audio} audio samples, but "
@@ -262,6 +276,13 @@ class ValidateModel:
                 f"{embeddings.dtype}."
             )
 
+        if embeddings.ndim != 2:
+            raise ModelError(
+                "Output dimensions of the embeddings from get_scene_embeddings is "
+                f"incorrect. Expected 2 dimensions, but received shape"
+                f"{embeddings.shape}."
+            )
+
         if embeddings.shape[0] != num_audio:
             raise ModelError(
                 f"Passed in a batch of {num_audio} audio samples, but "
@@ -306,6 +327,20 @@ class ValidateModel:
             raise ModelError(
                 f"Expected embeddings to be {torch.float32}, received "
                 f"{embeddings.dtype}."
+            )
+
+        if len(embeddings.shape) != 3:
+            raise ModelError(
+                "Output dimensions of the embeddings from get_timestamp_embeddings is "
+                f"incorrect. Expected 3 dimensions, but received shape"
+                f"{embeddings.shape}."
+            )
+
+        if len(timestamps.shape) != 2:
+            raise ModelError(
+                "Output dimensions of the timestamps from get_timestamp_embeddings is "
+                f"incorrect. Expected 2 dimensions, but received shape"
+                f"{timestamps.shape}."
             )
 
         if embeddings.shape[0] != num_audio:
@@ -373,6 +408,13 @@ class ValidateModel:
             raise ModelError(
                 f"Expected embeddings to be {torch.float32}, received "
                 f"{embeddings.dtype}."
+            )
+
+        if len(embeddings.shape) != 2:
+            raise ModelError(
+                "Output dimensions of the embeddings from get_scene_embeddings is "
+                f"incorrect. Expected 2 dimensions, but received shape"
+                f"{embeddings.shape}."
             )
 
         if embeddings.shape[0] != num_audio:
