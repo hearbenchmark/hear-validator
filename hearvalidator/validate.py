@@ -169,7 +169,7 @@ class ValidateModel:
 
     def torch_timestamp_embeddings(self):
         # Create a batch of test audio (white noise)
-        num_audio = 16
+        num_audio = 4
         length = 2.0
         audio_batch = torch.rand(
             (num_audio, int(length * self.model.sample_rate)), device=self.device
@@ -282,7 +282,7 @@ class ValidateModel:
 
     def tf2_timestamp_embeddings(self):
         # Create a batch of test audio (white noise)
-        num_audio = 16
+        num_audio = 4
         length = 2.0
         audio_batch = tf.random.uniform(
             (num_audio, int(length * self.model.sample_rate))
