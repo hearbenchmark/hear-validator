@@ -253,8 +253,8 @@ class ValidateModel:
 
     def torch_scene_embeddings(self):
         # Create a batch of test audio (white noise)
-        num_audio = 8
-        length = 3.74
+        num_audio = 4
+        length = 2.74
         audio_batch = torch.rand(
             (num_audio, int(length * self.model.sample_rate)), device=self.device
         )
@@ -387,8 +387,8 @@ class ValidateModel:
 
     def tf2_scene_embeddings(self):
         # Create a batch of test audio (white noise)
-        num_audio = 8
-        length = 3.74
+        num_audio = 4
+        length = 2.74
         audio_batch = tf.random.uniform(
             (num_audio, int(length * self.model.sample_rate))
         )
