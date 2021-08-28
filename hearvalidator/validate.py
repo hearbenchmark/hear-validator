@@ -16,7 +16,9 @@ Example usage:
 import argparse
 import importlib
 import warnings
+from typing import Tuple
 
+import numpy as np
 import torch
 import tensorflow as tf
 
@@ -152,48 +154,15 @@ class ValidateModel:
                 "Your API must include a function: 'get_timestamp_embeddings'"
             )
 
-        if self.model_type == "torch":
-            self.torch_timestamp_embeddings()
-        else:
-            self.tf2_timestamp_embeddings()
-
-    def check_scene_embeddings(self):
-        print("Checking get_scene_embeddings")
-        if not hasattr(self.module, "get_scene_embeddings"):
-            raise ModelError("Your API must include a function: 'get_scene_embeddings'")
-
-        if self.model_type == "torch":
-            self.torch_scene_embeddings()
-        else:
-            self.tf2_scene_embeddings()
-
-    def torch_timestamp_embeddings(self):
-        # Create a batch of test audio (white noise)
         num_audio = 4
         length = 2.0
-        audio_batch = torch.rand(
-            (num_audio, int(length * self.model.sample_rate)), device=self.device
-        )
-
-        # Audio samples [-1.0, 1.0]
-        audio_batch = (audio_batch * 2) - 1.0
-
-        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
-
-        # Get embeddings for the batch of white noise
-        embeddings, timestamps = self.module.get_timestamp_embeddings(
-            audio_batch, self.model
-        )
+        if self.model_type == "torch":
+            embeddings, timestamps = self.torch_timestamp_embeddings(num_audio=num_audio, length=length)
+        else:
+            embeddings, timestamps = self.tf2_timestamp_embeddings(num_audio=num_audio, length=length)
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
         print(f"  - Received timestamps of shape: {timestamps.shape}")
-
-        # Verify the output looks correct
-        if embeddings.dtype != torch.float32:
-            raise ModelError(
-                f"Expected embeddings to be {torch.float32}, received "
-                f"{embeddings.dtype}."
-            )
 
         if embeddings.ndim != 3:
             raise ModelError(
@@ -234,45 +203,46 @@ class ValidateModel:
 
         # Check that there is a consistent spacing between timestamps.
         # Warn if the spacing is greater than 50ms
-        timestamp_diff = torch.diff(timestamps)
-        average_diff = torch.mean(timestamp_diff.float())
-        print(f"  - Interval between timestamps is {average_diff}ms")
+        timestamp_diff = np.diff(timestamps)
+        print(timestamp_diff)
+        avg_diff = np.max(timestamp_diff)
+        max_diff = np.max(timestamp_diff)
+        print(f"  - Avg interval between timestamps is {avg_diff}ms")
+        print(f"  - Max interval between timestamps is {max_diff}ms")
 
-        if average_diff > 50.0:
+        if max_diff > 50.0:
             warnings.warn(
                 "We suggest a interval between timestamps less than or equal "
                 "to 50ms to accommodate a tolerance of 50ms for music "
                 "transcription tasks."
             )
 
-        if not torch.all(torch.abs(timestamp_diff - average_diff) < 1e-3):
+        if not np.all(np.abs(timestamp_diff - avg_diff) < 1e-3):
             raise ModelError(
                 "Timestamps should occur at regular intervals. Found "
                 "a deviation larger than 1ms between adjacent timestamps."
+                "If you REALLY want to use a variable hop-size,"
+                "please contact us"
             )
 
-    def torch_scene_embeddings(self):
-        # Create a batch of test audio (white noise)
+    def check_scene_embeddings(self):
+        print("Checking get_scene_embeddings")
+        if not hasattr(self.module, "get_scene_embeddings"):
+            raise ModelError("Your API must include a function: 'get_scene_embeddings'")
+
         num_audio = 4
         length = 2.74
-        audio_batch = torch.rand(
-            (num_audio, int(length * self.model.sample_rate)), device=self.device
-        )
-
-        # Audio samples [-1.0, 1.0]
-        audio_batch = (audio_batch * 2) - 1.0
-
-        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
-
-        # Get embeddings for the batch of white noise
-        embeddings = self.module.get_scene_embeddings(audio_batch, self.model)
+        if self.model_type == "torch":
+            embeddings = self.torch_scene_embeddings(num_audio, length)
+        else:
+            embeddings = self.tf2_scene_embeddings(num_audio, length)
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
 
         # Verify the output looks correct
-        if embeddings.dtype != torch.float32:
+        if embeddings.dtype != np.float32:
             raise ModelError(
-                f"Expected embeddings to be {torch.float32}, received "
+                f"Expected embeddings to be {np.float32}, received "
                 f"{embeddings.dtype}."
             )
 
@@ -299,12 +269,33 @@ class ValidateModel:
                 "should be the same."
             )
 
-    # TensorFlow specific embedding checks
-
-    def tf2_timestamp_embeddings(self):
+    def torch_timestamp_embeddings(self, num_audio: int, length: float) -> Tuple[np.ndarray, np.ndarray]:
         # Create a batch of test audio (white noise)
-        num_audio = 4
-        length = 2.0
+        audio_batch = torch.rand(
+            (num_audio, int(length * self.model.sample_rate)), device=self.device
+        )
+
+        # Audio samples [-1.0, 1.0]
+        audio_batch = (audio_batch * 2) - 1.0
+
+        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
+
+        # Get embeddings for the batch of white noise
+        embeddings, timestamps = self.module.get_timestamp_embeddings(
+            audio_batch, self.model
+        )
+
+        # Verify the output looks correct
+        if embeddings.dtype != torch.float32:
+            raise ModelError(
+                f"Expected embeddings to be {torch.float32}, received "
+                f"{embeddings.dtype}."
+            )
+
+        return embeddings.detach().cpu().numpy(), timestamps.detach().cpu().numpy()
+
+    def tf2_timestamp_embeddings(self, num_audio: int, length: float) -> Tuple[np.ndarray, np.array]:
+        # Create a batch of test audio (white noise)
         audio_batch = tf.random.uniform(
             (num_audio, int(length * self.model.sample_rate))
         )
@@ -319,73 +310,39 @@ class ValidateModel:
             audio_batch, self.model
         )
 
-        print(f"  - Received embedding of shape: {embeddings.shape}")
-        print(f"  - Received timestamps of shape: {timestamps.shape}")
-
         # Verify the output looks correct
         if embeddings.dtype != tf.float32:
+            raise ModelError(
+                f"Expected embeddings to be {tf.float32}, received "
+                f"{embeddings.dtype}."
+            )
+
+        return embeddings.numpy(), timestamps.numpy()
+
+    def torch_scene_embeddings(self, num_audio: int, length: float) -> np.ndarray:
+        # Create a batch of test audio (white noise)
+        audio_batch = torch.rand(
+            (num_audio, int(length * self.model.sample_rate)), device=self.device
+        )
+
+        # Audio samples [-1.0, 1.0]
+        audio_batch = (audio_batch * 2) - 1.0
+
+        print(f"  - Passing in audio batch of shape: {audio_batch.shape}")
+
+        # Get embeddings for the batch of white noise
+        embeddings = self.module.get_scene_embeddings(audio_batch, self.model)
+
+        # Verify the output looks correct
+        if embeddings.dtype != torch.float32:
             raise ModelError(
                 f"Expected embeddings to be {torch.float32}, received "
                 f"{embeddings.dtype}."
             )
 
-        if len(embeddings.shape) != 3:
-            raise ModelError(
-                "Output dimensions of the embeddings from get_timestamp_embeddings is "
-                f"incorrect. Expected 3 dimensions, but received shape"
-                f"{embeddings.shape}."
-            )
+        return embeddings.detach().cpu().numpy()
 
-        if len(timestamps.shape) != 2:
-            raise ModelError(
-                "Output dimensions of the timestamps from get_timestamp_embeddings is "
-                f"incorrect. Expected 2 dimensions, but received shape"
-                f"{timestamps.shape}."
-            )
-
-        if embeddings.shape[0] != num_audio:
-            raise ModelError(
-                f"Passed in a batch of {num_audio} audio samples, but "
-                f"your model returned {embeddings.shape[0]}. These values "
-                f"should be the same."
-            )
-
-        if embeddings.shape[:2] != timestamps.shape:
-            raise ModelError(
-                "Output shape of the timestamps from get_timestamp_embeddings is "
-                f"incorrect. Expected {embeddings.shape[:2]}, but received "
-                f"{timestamps.shape}."
-            )
-
-        if embeddings.shape[2] != self.model.timestamp_embedding_size:
-            raise ModelError(
-                f"Output embedding size is {embeddings.shape[2]}. Your "
-                f"model specified an embedding size of "
-                f"{self.model.timestamp_embedding_size} in "
-                "Model.timestamp_embedding_size. These values "
-                "should be the same."
-            )
-
-        # Check that there is a consistent spacing between timestamps.
-        # Warn if the spacing is greater than 50ms
-        timestamp_diff = timestamps[:, 1:] - timestamps[:, :-1]
-        average_diff = tf.math.reduce_mean(timestamp_diff)
-        print(f"  - Interval between timestamps is {average_diff}ms")
-
-        if average_diff > 50.0:
-            warnings.warn(
-                "We suggest a interval between timestamps less than or equal "
-                "to 50ms to accommodate a tolerance of 50ms for music "
-                "transcription tasks."
-            )
-
-        if not tf.math.reduce_all(tf.abs(timestamp_diff - average_diff) < 1e-3):
-            raise ModelError(
-                "Timestamps should occur at regular intervals. Found "
-                "a deviation larger than 1ms between adjacent timestamps."
-            )
-
-    def tf2_scene_embeddings(self):
+    def tf2_scene_embeddings(self, num_audio: int, length: float) -> np.ndarray:
         # Create a batch of test audio (white noise)
         num_audio = 4
         length = 2.74
@@ -401,37 +358,14 @@ class ValidateModel:
         # Get embeddings for the batch of white noise
         embeddings = self.module.get_scene_embeddings(audio_batch, self.model)
 
-        print(f"  - Received embedding of shape: {embeddings.shape}")
-
         # Verify the output looks correct
         if embeddings.dtype != tf.float32:
             raise ModelError(
-                f"Expected embeddings to be {torch.float32}, received "
+                f"Expected embeddings to be {tf.float32}, received "
                 f"{embeddings.dtype}."
             )
 
-        if len(embeddings.shape) != 2:
-            raise ModelError(
-                "Output dimensions of the embeddings from get_scene_embeddings is "
-                f"incorrect. Expected 2 dimensions, but received shape"
-                f"{embeddings.shape}."
-            )
-
-        if embeddings.shape[0] != num_audio:
-            raise ModelError(
-                f"Passed in a batch of {num_audio} audio samples, but "
-                f"your model returned {embeddings.shape[0]}. These values "
-                f"should be the same."
-            )
-
-        if embeddings.shape[1] != self.model.scene_embedding_size:
-            raise ModelError(
-                f"Output embedding size is {embeddings.shape[1]}. Your "
-                f"model specified an embedding size of "
-                f"{self.model.scene_embedding_size} in "
-                "Model.scene_embedding_size. These values "
-                "should be the same."
-            )
+        return embeddings.numpy()
 
 
 def main():
