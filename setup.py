@@ -18,7 +18,7 @@ setup(
         "Source Code": "https://github.com/neuralaudio/hear-validator",
     },
     packages=find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.6, <3.9",
     entry_points={
         "console_scripts": ["hear-validator=hearvalidator.validate:main"],
     },
