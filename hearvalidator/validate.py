@@ -236,14 +236,14 @@ class ValidateModel:
                   For example, if you want embeddings every 25ms and have
                   44100Hz audio, then the sample hop length is 1102.5. If
                   you round this before your for loop, the timestamp centers
-                  might be wrong.
-                  We check that your timestamps are correct, but cannot
-                  check that your model is using the appropriate sample
-                  for the center of your embedding. This nasty bug can
-                  occur if you round your sample hop length but compute
-                  timestamps not using your sample hop length."""
+                  and/or embedding sample centers might be wrong. In this
+                  example, you will drift 25ms every 37 minutes of audio.
+                  We can't detect this drift with short audio in the
+                  validator.
+                  """
         )
 
+        # These checks are cool but won't catch subtle bugs like the above.
         min_time = np.min(timestamps)
         max_time = np.max(timestamps)
         print(f"  - Min timestamp {min_time}ms")
