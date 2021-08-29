@@ -148,14 +148,35 @@ class ValidateModel:
             raise ModelError("Model.timestamp_embedding_size must be an int")
 
     def check_timestamp_embeddings(self):
+        # Run this a few times to check embeddings match timestamps
+        self._check_timestamp_embeddings(num_audio=2, length=61563 / 16000)
+        self._check_timestamp_embeddings(num_audio=2, length=1.07)
+        self._check_timestamp_embeddings(num_audio=2, length=1.98)
+        self._check_timestamp_embeddings(num_audio=2, length=4.0)
+        # for i in range(20):
+        #    import random
+        #    self._check_timestamp_embeddings(num_audio=2, length=(1+random.random() * 4))
+
+        warnings.warn(
+            """ IMPORTANT: A common bug we have seen in many codebases
+                  involves rounding errors accumulating over longer audio.
+                  For example, if you want embeddings every 25ms and have
+                  44100Hz audio, then the sample hop length is 1102.5. If
+                  you round this before your for loop, the timestamp centers
+                  and/or embedding sample centers might be wrong. In this
+                  example, you will drift 25ms every 37 minutes of audio.
+                  We can't detect this drift with short audio in the
+                  validator.
+                  """
+        )
+
+    def _check_timestamp_embeddings(self, num_audio, length):
         print("Checking get_timestamp_embeddings")
         if not hasattr(self.module, "get_timestamp_embeddings"):
             raise ModelError(
                 "Your API must include a function: 'get_timestamp_embeddings'"
             )
 
-        num_audio = 2
-        length = 4.0
         if self.model_type == "torch":
             embeddings, timestamps = self.torch_timestamp_embeddings(
                 num_audio=num_audio, length=length
@@ -207,55 +228,45 @@ class ValidateModel:
 
         # Check that there is a consistent spacing between timestamps.
         # Warn if the spacing is greater than 50ms
-        timestamp_diff = np.diff(timestamps)
-        avg_diff = np.mean(timestamp_diff)
-        max_diff = np.max(timestamp_diff)
-        print(f"  - Avg interval between timestamps is {avg_diff}ms")
-        print(f"  - Max interval between timestamps is {max_diff}ms")
+        if timestamps.shape[1] > 1:
+            timestamp_diff = np.diff(timestamps)
+            avg_diff = np.mean(timestamp_diff)
+            max_diff = np.max(timestamp_diff)
+            print(f"  - Avg interval between timestamps is {avg_diff}ms")
+            print(f"  - Max interval between timestamps is {max_diff}ms")
 
-        if max_diff > 50.0:
-            warnings.warn(
-                "We suggest a interval between timestamps less than or equal "
-                "to 50ms to accommodate a tolerance of 50ms for music "
-                "transcription tasks."
-            )
+            if max_diff > 50.0:
+                warnings.warn(
+                    "We suggest a interval between timestamps less than or equal "
+                    "to 50ms to accommodate a tolerance of 50ms for music "
+                    "transcription tasks."
+                )
 
-        timestamp_deviation = np.max(np.abs(timestamp_diff - avg_diff))
-        if timestamp_deviation > 1:
-            raise ModelError(
-                "Timestamps should occur at regular intervals. Found "
-                f"a deviation {timestamp_deviation}ms larger than 1ms "
-                "between adjacent timestamps. "
-                "If you REALLY want to use a variable hop-size,"
-                "please contact us"
-            )
+            timestamp_deviation = np.max(np.abs(timestamp_diff - avg_diff))
+            if timestamp_deviation > 1:
+                raise ModelError(
+                    "Timestamps should occur at regular intervals. Found "
+                    f"a deviation {timestamp_deviation}ms larger than 1ms "
+                    "between adjacent timestamps. "
+                    "If you REALLY want to use a variable hop-size,"
+                    "please contact us"
+                )
 
-        print(
-            """ IMPORTANT: A common bug we have seen in many codebases
-                  involves rounding errors accumulating over longer audio.
-                  For example, if you want embeddings every 25ms and have
-                  44100Hz audio, then the sample hop length is 1102.5. If
-                  you round this before your for loop, the timestamp centers
-                  and/or embedding sample centers might be wrong. In this
-                  example, you will drift 25ms every 37 minutes of audio.
-                  We can't detect this drift with short audio in the
-                  validator.
-                  """
-        )
-
-        # These checks are cool but won't catch subtle bugs like the above.
-        min_time = np.min(timestamps)
-        max_time = np.max(timestamps)
-        print(f"  - Min timestamp {min_time}ms")
-        print(f"  - Max timestamp {max_time}ms")
-        if min_time > avg_diff:
-            warnings.warn(
-                f"Your timestamps begin at {min_time}ms, which appears to be " "wrong."
-            )
-        if max_time < length - avg_diff:
-            raise ModelError(
-                f"Your timestamps end at {max_time}ms, but the " f"audio is {length}."
-            )
+            # These checks are cool but won't catch subtle bugs like the above.
+            min_time = np.min(timestamps)
+            max_time = np.max(timestamps)
+            print(f"  - Min timestamp {min_time}ms")
+            print(f"  - Max timestamp {max_time}ms")
+            if min_time > avg_diff:
+                warnings.warn(
+                    f"Your timestamps begin at {min_time}ms, which appears to be "
+                    "wrong."
+                )
+            if max_time < length - avg_diff:
+                raise ModelError(
+                    f"Your timestamps end at {max_time}ms, but the "
+                    f"audio is {length}."
+                )
 
     def check_scene_embeddings(self):
         print("Checking get_scene_embeddings")
