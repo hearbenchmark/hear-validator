@@ -149,9 +149,9 @@ class ValidateModel:
 
     def check_timestamp_embeddings(self):
         # Run this a few times to check embeddings match timestamps
-        self._check_timestamp_embeddings(num_audio=2, length=1.07)
-        self._check_timestamp_embeddings(num_audio=2, length=1.98)
-        self._check_timestamp_embeddings(num_audio=2, length=4.0)
+        self._check_timestamp_embeddings(num_audio=2, length_ms=1.07)
+        self._check_timestamp_embeddings(num_audio=2, length_ms=1.98)
+        self._check_timestamp_embeddings(num_audio=2, length_ms=4.0)
         # for i in range(20):
         #    import random
         #    self._check_timestamp_embeddings(num_audio=2,
@@ -262,10 +262,22 @@ class ValidateModel:
                     f"Your timestamps begin at {min_time}ms, which appears to be "
                     "wrong."
                 )
-            if max_time < length - avg_diff:
+            if max_time < 1000 * length - avg_diff:
                 raise ModelError(
                     f"Your timestamps end at {max_time}ms, but the "
-                    f"audio is {length}."
+                    f"audio is {1000 * length} ms. You won't have "
+                    f"embeddings for events at the end of the audio."
+                )
+            if max_time < 1000 * length - 50:
+                warnings.warn(
+                    f"Your timestamps end at {max_time}ms, but the "
+                    f"audio is {1000 * length} ms. You won't have "
+                    f"embeddings for events at the end of the audio."
+                )
+            if max_time > 1000 * length:
+                raise ModelError(
+                    f"Your timestamps end at {max_time}ms, but the "
+                    f"audio is {1000 * length} ms."
                 )
 
     def check_scene_embeddings(self):
