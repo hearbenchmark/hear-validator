@@ -262,10 +262,22 @@ class ValidateModel:
                     f"Your timestamps begin at {min_time}ms, which appears to be "
                     "wrong."
                 )
-            if max_time < length - avg_diff:
+            if max_time < 1000 * length - avg_diff:
                 raise ModelError(
                     f"Your timestamps end at {max_time}ms, but the "
-                    f"audio is {length}."
+                    f"audio is {1000 * length} ms. You won't have "
+                    f"embeddings for events at the end of the audio."
+                )
+            if max_time < 1000 * length - 50:
+                warnings.warn(
+                    f"Your timestamps end at {max_time}ms, but the "
+                    f"audio is {1000 * length} ms. You won't have "
+                    f"embeddings for events at the end of the audio."
+                )
+            if max_time > 1000 * length:
+                raise ModelError(
+                    f"Your timestamps end at {max_time}ms, but the "
+                    f"audio is {1000 * length} ms."
                 )
 
     def check_scene_embeddings(self):
