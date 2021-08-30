@@ -262,13 +262,7 @@ class ValidateModel:
                     f"Your timestamps begin at {min_time}ms, which appears to be "
                     "wrong."
                 )
-            if max_time < 1000 * length - avg_diff:
-                raise ModelError(
-                    f"Your timestamps end at {max_time}ms, but the "
-                    f"audio is {1000 * length} ms. You won't have "
-                    f"embeddings for events at the end of the audio."
-                )
-            if max_time < 1000 * length - 50:
+            if (max_time < 1000 * length - avg_diff) or (max_time < 1000 * length - 50):
                 warnings.warn(
                     f"Your timestamps end at {max_time}ms, but the "
                     f"audio is {1000 * length} ms. You won't have "
