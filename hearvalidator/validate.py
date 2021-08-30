@@ -149,9 +149,9 @@ class ValidateModel:
 
     def check_timestamp_embeddings(self):
         # Run this a few times to check embeddings match timestamps
-        self._check_timestamp_embeddings(num_audio=2, length_ms=1.07)
-        self._check_timestamp_embeddings(num_audio=2, length_ms=1.98)
-        self._check_timestamp_embeddings(num_audio=2, length_ms=4.0)
+        self._check_timestamp_embeddings(num_audio=2, length=1.07)
+        self._check_timestamp_embeddings(num_audio=2, length=1.98)
+        self._check_timestamp_embeddings(num_audio=2, length=4.0)
         # for i in range(20):
         #    import random
         #    self._check_timestamp_embeddings(num_audio=2,
