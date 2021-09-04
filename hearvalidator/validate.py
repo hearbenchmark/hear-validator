@@ -19,8 +19,8 @@ import warnings
 from typing import Tuple
 
 import numpy as np
-import torch
 import tensorflow as tf
+import torch
 
 
 class ModelError(BaseException):
@@ -33,7 +33,10 @@ class ValidateModel:
 
     ACCEPTABLE_SAMPLE_RATE = [16000, 22050, 44100, 48000]
 
-    def __init__(self, module_name: str, model_file_path: str, device: str = None):
+    def __init__(self,
+                 module_name: str,
+                 model_file_path: str,
+                 device: str = None):
         self.module_name = module_name
         self.model_file_path = model_file_path
         self.device = device
@@ -78,7 +81,8 @@ class ValidateModel:
 
         # Try to load the module. Use a weight file if one was provided
         if self.model_file_path:
-            print(f"  - Loading model with weights file: {self.model_file_path}")
+            print(
+                f"  - Loading model with weights file: {self.model_file_path}")
             self.model = self.module.load_model(self.model_file_path)
         else:
             print("  - No weight file provided. Using default")
@@ -95,10 +99,8 @@ class ValidateModel:
             if self.device is None:
                 self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            print(
-                f"  - Received torch Module: {self.model}. "
-                f"Loading onto device: {self.device}"
-            )
+            print(f"  - Received torch Module: {self.model}. "
+                  f"Loading onto device: {self.device}")
             self.model.to(self.device)
 
         else:
@@ -106,30 +108,26 @@ class ValidateModel:
                 "Model must be either a PyTorch module: "
                 "https://pytorch.org/docs/stable/generated/torch.nn.Module.html "
                 "or a tensorflow module: "
-                "https://www.tensorflow.org/api_docs/python/tf/Module"
-            )
+                "https://www.tensorflow.org/api_docs/python/tf/Module")
 
     def check_sample_rate(self):
         print("Checking model sample rate")
         if not hasattr(self.model, "sample_rate"):
-            raise ModelError(
-                "Model must expose expected input audio " "sample rate as an attribute."
-            )
+            raise ModelError("Model must expose expected input audio "
+                             "sample rate as an attribute.")
 
         print(f"  - Model sample rate is: {self.model.sample_rate}")
         if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
             raise ModelError(
                 f"Input sample rate of {self.sample_rate} is invalid. "
-                f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}"
-            )
+                f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}")
 
     def check_embedding_size(self):
         print("Checking model embedding size")
         if not hasattr(self.model, "scene_embedding_size"):
             raise ModelError(
                 "Model must expose the output size of the scene "
-                "embeddings as an attribute: scene_embedding_size"
-            )
+                "embeddings as an attribute: scene_embedding_size")
 
         if not isinstance(self.model.scene_embedding_size, int):
             raise ModelError("Model.scene_embedding_size must be an int")
@@ -139,10 +137,11 @@ class ValidateModel:
         if not hasattr(self.model, "timestamp_embedding_size"):
             raise ModelError(
                 "Model must expose the output size of the timestamp "
-                "embeddings as an attribute: timestamp_embedding_size"
-            )
+                "embeddings as an attribute: timestamp_embedding_size")
 
-        print(f"  - timestamp_embedding_size: {self.model.timestamp_embedding_size}")
+        print(
+            f"  - timestamp_embedding_size: {self.model.timestamp_embedding_size}"
+        )
 
         if not isinstance(self.model.timestamp_embedding_size, int):
             raise ModelError("Model.timestamp_embedding_size must be an int")
@@ -167,24 +166,20 @@ class ValidateModel:
                   example, you will drift 25ms every 37 minutes of audio.
                   We can't detect this drift with short audio in the
                   validator.
-                  """
-        )
+                  """)
 
     def _check_timestamp_embeddings(self, num_audio, length):
         print("Checking get_timestamp_embeddings")
         if not hasattr(self.module, "get_timestamp_embeddings"):
             raise ModelError(
-                "Your API must include a function: 'get_timestamp_embeddings'"
-            )
+                "Your API must include a function: 'get_timestamp_embeddings'")
 
         if self.model_type == "torch":
             embeddings, timestamps = self.torch_timestamp_embeddings(
-                num_audio=num_audio, length=length
-            )
+                num_audio=num_audio, length=length)
         else:
             embeddings, timestamps = self.tf2_timestamp_embeddings(
-                num_audio=num_audio, length=length
-            )
+                num_audio=num_audio, length=length)
 
         print(f"  - Received embedding of shape: {embeddings.shape}")
         print(f"  - Received timestamps of shape: {timestamps.shape}")
@@ -193,29 +188,25 @@ class ValidateModel:
             raise ModelError(
                 "Output dimensions of the embeddings from get_timestamp_embeddings is "
                 f"incorrect. Expected 3 dimensions, but received shape"
-                f"{embeddings.shape}."
-            )
+                f"{embeddings.shape}.")
 
         if timestamps.ndim != 2:
             raise ModelError(
                 "Output dimensions of the timestamps from get_timestamp_embeddings is "
                 f"incorrect. Expected 2 dimensions, but received shape"
-                f"{timestamps.shape}."
-            )
+                f"{timestamps.shape}.")
 
         if embeddings.shape[0] != num_audio:
             raise ModelError(
                 f"Passed in a batch of {num_audio} audio samples, but "
                 f"your model returned {embeddings.shape[0]}. These values "
-                f"should be the same."
-            )
+                f"should be the same.")
 
         if embeddings.shape[:2] != timestamps.shape:
             raise ModelError(
                 "Output shape of the timestamps from get_timestamp_embeddings is "
                 f"incorrect. Expected {embeddings.shape[:2]}, but received "
-                f"{timestamps.shape}."
-            )
+                f"{timestamps.shape}.")
 
         if embeddings.shape[2] != self.model.timestamp_embedding_size:
             raise ModelError(
@@ -223,8 +214,7 @@ class ValidateModel:
                 f"model specified an embedding size of "
                 f"{self.model.timestamp_embedding_size} in "
                 "Model.timestamp_embedding_size. These values "
-                "should be the same."
-            )
+                "should be the same.")
 
         # Check that there is a consistent spacing between timestamps.
         # Warn if the spacing is greater than 50ms
@@ -239,8 +229,7 @@ class ValidateModel:
                 warnings.warn(
                     "We suggest a interval between timestamps less than or equal "
                     "to 50ms to accommodate a tolerance of 50ms for music "
-                    "transcription tasks."
-                )
+                    "transcription tasks.")
 
             timestamp_deviation = np.max(np.abs(timestamp_diff - avg_diff))
             if timestamp_deviation > 1:
@@ -249,8 +238,7 @@ class ValidateModel:
                     f"a deviation {timestamp_deviation}ms larger than 1ms "
                     "between adjacent timestamps. "
                     "If you REALLY want to use a variable hop-size,"
-                    "please contact us"
-                )
+                    "please contact us")
 
             # These checks are cool but won't catch subtle bugs like the above.
             min_time = np.min(timestamps)
@@ -260,24 +248,23 @@ class ValidateModel:
             if min_time > avg_diff:
                 warnings.warn(
                     f"Your timestamps begin at {min_time}ms, which appears to be "
-                    "wrong."
-                )
-            if (max_time < 1000 * length - avg_diff) or (max_time < 1000 * length - 50):
+                    "wrong.")
+            if (max_time < 1000 * length - avg_diff) or (max_time <
+                                                         1000 * length - 50):
                 warnings.warn(
                     f"Your timestamps end at {max_time}ms, but the "
                     f"audio is {1000 * length} ms. You won't have "
-                    f"embeddings for events at the end of the audio."
-                )
+                    f"embeddings for events at the end of the audio.")
             if max_time > 1000 * length:
                 raise ModelError(
                     f"Your timestamps end at {max_time}ms, but the "
-                    f"audio is {1000 * length} ms."
-                )
+                    f"audio is {1000 * length} ms.")
 
     def check_scene_embeddings(self):
         print("Checking get_scene_embeddings")
         if not hasattr(self.module, "get_scene_embeddings"):
-            raise ModelError("Your API must include a function: 'get_scene_embeddings'")
+            raise ModelError(
+                "Your API must include a function: 'get_scene_embeddings'")
 
         num_audio = 4
         length = 2.74
@@ -292,22 +279,19 @@ class ValidateModel:
         if embeddings.dtype != np.float32:
             raise ModelError(
                 f"Expected embeddings to be {np.float32}, received "
-                f"{embeddings.dtype}."
-            )
+                f"{embeddings.dtype}.")
 
         if embeddings.ndim != 2:
             raise ModelError(
                 "Output dimensions of the embeddings from get_scene_embeddings is "
                 f"incorrect. Expected 2 dimensions, but received shape"
-                f"{embeddings.shape}."
-            )
+                f"{embeddings.shape}.")
 
         if embeddings.shape[0] != num_audio:
             raise ModelError(
                 f"Passed in a batch of {num_audio} audio samples, but "
                 f"your model returned {embeddings.shape[0]}. These values "
-                f"should be the same."
-            )
+                f"should be the same.")
 
         if embeddings.shape[1] != self.model.scene_embedding_size:
             raise ModelError(
@@ -315,16 +299,15 @@ class ValidateModel:
                 f"model specified an embedding size of "
                 f"{self.model.scene_embedding_size} in "
                 "Model.scene_embedding_size. These values "
-                "should be the same."
-            )
+                "should be the same.")
 
     def torch_timestamp_embeddings(
-        self, num_audio: int, length: float
-    ) -> Tuple[np.ndarray, np.ndarray]:
+            self, num_audio: int,
+            length: float) -> Tuple[np.ndarray, np.ndarray]:
         # Create a batch of test audio (white noise)
         audio_batch = torch.rand(
-            (num_audio, int(length * self.model.sample_rate)), device=self.device
-        )
+            (num_audio, int(length * self.model.sample_rate)),
+            device=self.device)
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
@@ -333,25 +316,22 @@ class ValidateModel:
 
         # Get embeddings for the batch of white noise
         embeddings, timestamps = self.module.get_timestamp_embeddings(
-            audio_batch, self.model
-        )
+            audio_batch, self.model)
 
         # Verify the output looks correct
         if embeddings.dtype != torch.float32:
             raise ModelError(
                 f"Expected embeddings to be {torch.float32}, received "
-                f"{embeddings.dtype}."
-            )
+                f"{embeddings.dtype}.")
 
-        return embeddings.detach().cpu().numpy(), timestamps.detach().cpu().numpy()
+        return embeddings.detach().cpu().numpy(), timestamps.detach().cpu(
+        ).numpy()
 
-    def tf2_timestamp_embeddings(
-        self, num_audio: int, length: float
-    ) -> Tuple[np.ndarray, np.array]:
+    def tf2_timestamp_embeddings(self, num_audio: int,
+                                 length: float) -> Tuple[np.ndarray, np.array]:
         # Create a batch of test audio (white noise)
         audio_batch = tf.random.uniform(
-            (num_audio, int(length * self.model.sample_rate))
-        )
+            (num_audio, int(length * self.model.sample_rate)))
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
@@ -360,23 +340,22 @@ class ValidateModel:
 
         # Get embeddings for the batch of white noise
         embeddings, timestamps = self.module.get_timestamp_embeddings(
-            audio_batch, self.model
-        )
+            audio_batch, self.model)
 
         # Verify the output looks correct
         if embeddings.dtype != tf.float32:
             raise ModelError(
                 f"Expected embeddings to be {tf.float32}, received "
-                f"{embeddings.dtype}."
-            )
+                f"{embeddings.dtype}.")
 
         return embeddings.numpy(), timestamps.numpy()
 
-    def torch_scene_embeddings(self, num_audio: int, length: float) -> np.ndarray:
+    def torch_scene_embeddings(self, num_audio: int,
+                               length: float) -> np.ndarray:
         # Create a batch of test audio (white noise)
         audio_batch = torch.rand(
-            (num_audio, int(length * self.model.sample_rate)), device=self.device
-        )
+            (num_audio, int(length * self.model.sample_rate)),
+            device=self.device)
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
@@ -390,18 +369,17 @@ class ValidateModel:
         if embeddings.dtype != torch.float32:
             raise ModelError(
                 f"Expected embeddings to be {torch.float32}, received "
-                f"{embeddings.dtype}."
-            )
+                f"{embeddings.dtype}.")
 
         return embeddings.detach().cpu().numpy()
 
-    def tf2_scene_embeddings(self, num_audio: int, length: float) -> np.ndarray:
+    def tf2_scene_embeddings(self, num_audio: int,
+                             length: float) -> np.ndarray:
         # Create a batch of test audio (white noise)
         num_audio = 4
         length = 2.74
         audio_batch = tf.random.uniform(
-            (num_audio, int(length * self.model.sample_rate))
-        )
+            (num_audio, int(length * self.model.sample_rate)))
 
         # Audio samples [-1.0, 1.0]
         audio_batch = (audio_batch * 2) - 1.0
@@ -415,19 +393,18 @@ class ValidateModel:
         if embeddings.dtype != tf.float32:
             raise ModelError(
                 f"Expected embeddings to be {tf.float32}, received "
-                f"{embeddings.dtype}."
-            )
+                f"{embeddings.dtype}.")
 
         return embeddings.numpy()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    parser.add_argument(
-        "module", help="Name of the model package to validate", type=str
-    )
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("module",
+                        help="Name of the model package to validate",
+                        type=str)
     parser.add_argument(
         "--model",
         "-m",
