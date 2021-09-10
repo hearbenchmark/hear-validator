@@ -31,7 +31,7 @@ class ModelError(BaseException):
 
 class ValidateModel:
 
-    ACCEPTABLE_SAMPLE_RATE = [16000, 22050, 44100, 48000]
+    ACCEPTABLE_SAMPLE_RATE = [16000, 22050, 32000, 44100, 48000]
 
     def __init__(self, module_name: str, model_file_path: str, device: str = None):
         self.module_name = module_name
@@ -113,13 +113,13 @@ class ValidateModel:
         print("Checking model sample rate")
         if not hasattr(self.model, "sample_rate"):
             raise ModelError(
-                "Model must expose expected input audio " "sample rate as an attribute."
+                "Model must expose expected input audio sample rate as an attribute."
             )
 
         print(f"  - Model sample rate is: {self.model.sample_rate}")
         if self.model.sample_rate not in self.ACCEPTABLE_SAMPLE_RATE:
             raise ModelError(
-                f"Input sample rate of {self.sample_rate} is invalid. "
+                f"Input sample rate of {self.model.sample_rate} is invalid. "
                 f"Must be one of {self.ACCEPTABLE_SAMPLE_RATE}"
             )
 
