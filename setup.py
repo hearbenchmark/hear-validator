@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 from setuptools import find_packages, setup
 
-long_description = open("README.md", "r", encoding="utf-8").read()
+long_description = open("README.md", "r").read()
 
 setup(
     name="hearvalidator",
-    version="2021.0.3",
     description="Holistic Evaluation of Audio Representations (HEAR) 2021 -- Submission Validator",
     author="HEAR 2021 NeurIPS Competition Committee",
     author_email="deep@neuralaudio.ai",
