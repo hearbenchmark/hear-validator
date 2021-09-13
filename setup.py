@@ -5,7 +5,6 @@ long_description = open("README.md", "r").read()
 
 setup(
     name="hearvalidator",
-    version="2021.0.3",
     description="Holistic Evaluation of Audio Representations (HEAR) 2021 -- Submission Validator",
     author="HEAR 2021 NeurIPS Competition Committee",
     author_email="deep@neuralaudio.ai",
