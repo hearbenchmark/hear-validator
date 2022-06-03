@@ -4,7 +4,7 @@ This command-line script can be called to validate any module against the HEAR 2
 API to ensure that all the current functions and attributes are available, can be called
 with the expected input, and produce correctly formed output. To see the API that this
 was built against, please visit
-https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api
+https://hearbenchmark.com/hear-api.html
 
 Usage:
     hear-validator <module-to-test> -m <path-to-model-checkpoint-file> -d <device>

@@ -1,11 +1,9 @@
-![HEAR2021](https://neuralaudio.ai/assets/img/hear-header-sponsor.jpg)
-# HEAR 2021 Submission Validator
+# HEAR Benchmark Submission Validator
 
 This package provides a command-line tool to verify that a python module follows the
-HEAR 2021 [common API](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html#common-api).
+HEAR [common API](https://hearbenchmark.com/hear-api.html).
 
-For full details on the HEAR 2021 NeurIPS competition please visit the
-[competition website.](https://neuralaudio.ai/hear2021-holistic-evaluation-of-audio-representations.html)
+For full details on the HEAR benchmark please visit https://hearbenchmark.com
 
 ### Installation
 
@@ -19,10 +17,10 @@ This will install a command-line tool: `hear-validator`
 
 ### Usage
 
-Let's validate the [HEAR baseline model](https://github.com/neuralaudio/hear-baseline):
+Let's validate the [HEAR naive baseline model](https://github.com/hearbenchmark/hear-baseline):
 ```
 pip install hearbaseline
-wget https://github.com/neuralaudio/hear-baseline/raw/main/saved_models/naive_baseline.pt
+wget https://github.com/hearbenchmark/hear-baseline/raw/main/saved_models/naive_baseline.pt
 hear-validator hearbaseline --model ./naive_baseline.pt
 ```
 
