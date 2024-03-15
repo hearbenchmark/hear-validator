@@ -1,4 +1,4 @@
-tensorflow>=2.0
+tensorflow>=2.12.0rc1
 torch>=1.7
 pre-commit
 black
